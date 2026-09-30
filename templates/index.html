@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather App</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <main class="container">
+    <h1>🌦️ Weather</h1>
+    <form id="search-form" class="search-form">
+      <input
+        type="text"
+        id="city-input"
+        placeholder="Enter a city, e.g. Taipei"
+        autocomplete="off"
+        required
+      />
+      <button type="submit">Search</button>
+    </form>
+
+    <div id="status" class="status"></div>
+
+    <section id="result" class="result hidden">
+      <div class="current-card">
+        <h2 id="location-name"></h2>
+        <div class="current-main">
+          <span id="current-icon" class="icon"></span>
+          <span id="current-temp" class="temp"></span>
+        </div>
+        <p id="current-desc" class="desc"></p>
+        <div class="current-details">
+          <span id="feels-like"></span>
+          <span id="humidity"></span>
+          <span id="wind"></span>
+        </div>
+      </div>
+
+      <div id="forecast" class="forecast"></div>
+    </section>
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
