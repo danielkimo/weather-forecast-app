@@ -1,16 +1,22 @@
 """Simple weather web app.
 
-Uses Open-Meteo's free, key-free APIs:
-- Geocoding API to resolve a city name to coordinates.
-- Forecast API to fetch current weather + a short daily forecast.
+- Geocoding: Nominatim (OpenStreetMap), which supports searching by city
+  name in any language, including Chinese.
+- Forecast: Open-Meteo's free, key-free forecast API.
 """
 import requests
 from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
-GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search"
+GEOCODE_URL = "https://nominatim.openstreetmap.org/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+
+# Nominatim's usage policy requires an identifying User-Agent on requests.
+GEOCODE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; SimpleWeatherApp/1.0; "
+    "+https://github.com/danielkimo/weather-forecast-app)"
+}
 
 # WMO weather codes -> human readable description + emoji icon.
 WEATHER_CODES = {
@@ -56,20 +62,40 @@ def api_weather():
     try:
         geo_resp = requests.get(
             GEOCODE_URL,
-            params={"name": city, "count": 1, "language": "en", "format": "json"},
+            params={
+                "q": city,
+                "format": "json",
+                "limit": 1,
+                "accept-language": "zh-TW,en",
+                "addressdetails": 1,
+            },
+            headers=GEOCODE_HEADERS,
             timeout=10,
         )
         geo_resp.raise_for_status()
-        geo_data = geo_resp.json()
+        results = geo_resp.json()
     except requests.RequestException:
         return jsonify({"error": "Could not reach the geocoding service."}), 502
 
-    results = geo_data.get("results")
     if not results:
         return jsonify({"error": f'City "{city}" not found.'}), 404
 
     place = results[0]
-    lat, lon = place["latitude"], place["longitude"]
+    lat, lon = float(place["lat"]), float(place["lon"])
+    address = place.get("address", {})
+    place_name = (
+        address.get("city")
+        or address.get("town")
+        or address.get("village")
+        or address.get("county")
+        or place.get("display_name", city).split(",")[0]
+    )
+    # Nominatim sometimes returns "simplified/traditional" combined names
+    # (e.g. "东京都/東京都"); prefer the latter part for zh-TW display.
+    if "/" in place_name:
+        place_name = place_name.split("/")[-1]
+    place_country = address.get("country")
+    place_admin1 = address.get("state") or address.get("region")
 
     try:
         weather_resp = requests.get(
@@ -111,9 +137,9 @@ def api_weather():
     return jsonify(
         {
             "location": {
-                "name": place.get("name"),
-                "country": place.get("country"),
-                "admin1": place.get("admin1"),
+                "name": place_name,
+                "country": place_country,
+                "admin1": place_admin1,
             },
             "current": {
                 "temperature": current.get("temperature_2m"),

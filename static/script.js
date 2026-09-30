@@ -80,6 +80,6 @@ form.addEventListener("submit", (e) => {
 
 // Default lookup on load.
 window.addEventListener("DOMContentLoaded", () => {
-  input.value = "Taipei";
-  fetchWeather("Taipei");
+  input.value = "台北";
+  fetchWeather("台北");
 });
