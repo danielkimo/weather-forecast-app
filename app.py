@@ -155,4 +155,4 @@ def api_weather():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5050)
+    app.run(debug=True, port=5061)
